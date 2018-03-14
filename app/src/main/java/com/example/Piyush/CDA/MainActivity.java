@@ -37,16 +37,17 @@ import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.ActivityRecognition;
 
+import net.gotev.uploadservice.MultipartUploadRequest;
+import net.gotev.uploadservice.UploadNotificationConfig;
+
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.UUID;
 
-import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.OkHttpClient;
-import okhttp3.RequestBody;
+
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener{
 //    private static final String TAG = ;
@@ -65,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     Button upload;
     MyLocation myLocation ;
     Double lat,log;
+    String act;
     MyLocation.LocationResult locationResult ;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,7 +98,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 public void onClick(View v) {
                     Log.d("", "onClick: ");
                     dispatchTakePictureIntent();
-                    imageView.setVisibility(View.VISIBLE);
+
                 }
             });
             locationResult = new MyLocation.LocationResult() {
@@ -123,6 +125,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                     String message = intent.getStringExtra(ActivityRecognizedService.LOCAL_BROADCAST_EXTRA);
                     Log.d("MyApp", "Activity: "+message);
                     activity.setText(message);
+                    act=message;
                     upload.setEnabled(true);
 //                    Toast.makeText(this,"You can submit photo now")
                 }
@@ -141,48 +144,24 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     private void upload() {
+        String url = "http://192.168.55.109:3000/upload/multipart";
+        if (lat != null && log != null && mCurrentPhotoPath != null) {
+            try {
+                String uploadId = UUID.randomUUID().toString();
 
-        if(lat!=null && log!=null && mCurrentPhotoPath!=null)
-        {
-            String imagePath=mCurrentPhotoPath;
-            OkHttpClient client = new OkHttpClient();
-            File fileSource = new File(imagePath);
-            if (fileSource.isFile()){
-                Log.i("EXIST","exist");
-            }else {
-                Log.i("NOT EXIST","not exist");
+                //Creating a multi part request
+                MultipartUploadRequest request = new MultipartUploadRequest(this, uploadId, url);
+
+                request.addFileToUpload(mCurrentPhotoPath, "image_url");
+                request.setNotificationConfig(new UploadNotificationConfig());
+                request.setMaxRetries(1000);
+                request.startUpload(); //Starting the upload
+
             }
-            final MediaType MEDIA_TYPE;
-            String imageType;
-            if (imagePath.endsWith("png")){
-                MEDIA_TYPE = MediaType.parse("image/png");
-                imageType = ".png";
-            }else {
-                MEDIA_TYPE = MediaType.parse("image/jpeg");
-                imageType = ".jpg";
+            catch (Exception exc) {
+                exc.printStackTrace();
+                Toast.makeText(this, exc.getMessage(), Toast.LENGTH_SHORT).show();
             }
-            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
-            String fileName = "Prathap_"+timeStamp+imageType+"_"+lat+"_"+log;
-
-
-            RequestBody requestBody = new MultipartBody.Builder()
-                    .setType(MultipartBody.FORM)   .addFormDataPart("file",fileName,RequestBody.create(MEDIA_TYPE,fileSource))
-                    .build();
-//            Request request = new Request.Builder()
-//                    .url(your url)//your webservice url
-//                    .post(requestBody)
-//                    .build();
-//            try {
-//                Response response = client.newCall(request).execute();
-//                if (response.isSuccessful()){
-//                    Log.i("SUCC",""+response.message());
-//                }
-//                String resp = response.message();
-//                Log.i("MSG",resp);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//            return 0;
         }
     }
     static final int REQUEST_IMAGE_CAPTURE = 1;
@@ -202,7 +181,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
                 editText.setText(Double.toString(lat));
                 editText2.setText(Double.toString(log));
             } else {
-                Toast.makeText(this, "Location Loading", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Location Loading\n Please wait..", Toast.LENGTH_SHORT).show();
             }
         }
         catch (Exception e)
@@ -240,7 +219,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private File createImageFile() throws IOException {
         // Create an image file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        String imageFileName = "JPEG_" + timeStamp + " Akshat";
+        String imageFileName = "JPEG_" + timeStamp + " Piyush"+"_"+Double.toString(lat)+"_"+Double.toString(log)+"_"+act;
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
 
         File image = File.createTempFile(
