@@ -56,6 +56,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     BroadcastReceiver myReceiver;
     TextView tv;
     int TIMER = 3000; // 3 sec
+    static final int REQUEST_IMAGE_CAPTURE = 1;
+    static final int REQUEST_TAKE_PHOTO = 1;
 
     ImageView imageView;
     ImageButton imageButton;
@@ -164,8 +166,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
             }
         }
     }
-    static final int REQUEST_IMAGE_CAPTURE = 1;
-    static final int REQUEST_TAKE_PHOTO = 1;
+
 
     public void set_location() {
         Log.d("aaaaa", "set_location:" + myLocation);
